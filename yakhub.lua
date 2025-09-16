@@ -1,152 +1,229 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+-- Interface simples e compatível
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
-local Window = Fluent:CreateWindow({
-    Title = "YAK HUB | Fluent UI",
-    SubTitle = "by Pedro of war",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
-    Acrylic = true,
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.RightControl
+local Window = Rayfield:CreateWindow({
+   Name = "🐂 YAK HUB | BROOKHAVEN RP",
+   LoadingTitle = "YAK HUB Carregando...",
+   LoadingSubtitle = "by Pedro of war",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "YAKHUB",
+      FileName = "Config"
+   },
+   Discord = {
+      Enabled = true,
+      Invite = "qfSDax2zRV",
+      RememberJoins = true
+   },
+   KeySystem = false,
 })
 
+-- Fire server message
 local args = {
     [1] = "RolePlayName",
-    [2] = "BEM VINDO AO SCRIPT YAK HUB"
+    [2] = "🐂 BEM VINDO AO YAK HUB 🐂"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("RE"):WaitForChild("1RPNam1eTex1t"):FireServer(unpack(args))
 
-local Tabs = {
-    Main = Window:AddTab({ Title = "Main", Icon = "home" }),
-    Troll = Window:AddTab({ Title = "Troll", Icon = "skull" }),
-    Credits = Window:AddTab({ Title = "Credits", Icon = "heart" })
-}
-
+-- Variáveis globais
 local jogadorSelecionado = nil
 local autoFlingConexao = nil
-local isViewingPlayer = false
-local currentViewConnection = nil
 
-local function ObterNomesJogadores()
-    local nomes = {}
-    for _, jogador in ipairs(game.Players:GetPlayers()) do
-        table.insert(nomes, jogador.Name)
-    end
-    return nomes
+-- ABA PRINCIPAL
+local MainTab = Window:CreateTab("Principal", 4483362458)
+MainTab:CreateSection("🐂 YAK HUB")
+MainTab:CreateLabel("Hub modificado para Brookhaven RP | Versão BETA")
+
+MainTab:CreateButton({
+    Name = "🔗 Copiar Discord",
+    Callback = function()
+        setclipboard("https://discord.gg/qfSDax2zRV")
+        Rayfield:Notify({
+            Title = "Discord",
+            Content = "Link copiado!",
+            Duration = 3,
+            Image = 4483362458
+        })
+    end,
+})
+
+-- ABA SCRIPTS
+local ScriptsTab = Window:CreateTab("Scripts", 4483362458)
+ScriptsTab:CreateSection("Scripts Externos")
+
+local scriptList = {
+    {"YAK ESP", "https://raw.githubusercontent.com/Yak-Scripts/yakhub/main/YakESP.lua"},
+    {"YAK Avatar GUI", "https://raw.githubusercontent.com/Yak-Scripts/yakhub/main/avatar%20GUI"},
+    {"Cleitin Hub V4", "https://raw.githubusercontent.com/CLEITI6966/Brookhaven/refs/heads/main/start.lua"},
+    {"Sander X", "https://rawscripts.net/raw/Brookhaven-RP-Sander-X-Hub-Latest-Version-3-16718"},
+    {"R4D Sem Key", "https://rawscripts.net/raw/Brookhaven-RP-R4D-script-no-key-17562"},
+    {"Infinite Yield", "https://rawscripts.net/raw/Infinite-Yield_500"},
+    {"Troll GUI", "https://rawscripts.net/raw/Universal-Script-Troll-Gui-3874"}
+}
+
+for _, scriptData in pairs(scriptList) do
+    ScriptsTab:CreateButton({
+        Name = scriptData[1],
+        Callback = function()
+            loadstring(game:HttpGet(scriptData[2]))()
+            Rayfield:Notify({
+                Title = "Script Carregado",
+                Content = scriptData[1] .. " executado!",
+                Duration = 3,
+                Image = 4483362458
+            })
+        end,
+    })
 end
 
-Tabs.Main:AddParagraph({
-    Title = "YAK HUB",
-    Content = "Bem-vindo ao script YAK HUB com interface Fluent!"
+-- ABA TROLL
+local TrollTab = Window:CreateTab("Troll", 4483362458)
+TrollTab:CreateSection("Ferramentas de Troll")
+
+-- CAIXA DE TEXTO PARA DIGITAR O NOME
+local playerNameInput = ""
+TrollTab:CreateInput({
+    Name = "Digite o nome do jogador",
+    PlaceholderText = "Nome do jogador",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+        playerNameInput = Text
+        jogadorSelecionado = (Text ~= "") and Text or nil
+        if Text ~= "" then
+            Rayfield:Notify({
+                Title = "Jogador Definido",
+                Content = "Jogador: " .. Text,
+                Duration = 2,
+                Image = 4483362458
+            })
+        end
+    end,
 })
 
-Tabs.Main:AddButton({
-    Title = "Atualizar Jogadores",
-    Description = "Atualiza a lista de jogadores em todas as abas",
+-- View Player
+TrollTab:CreateButton({
+    Name = "👁️ View Player",
     Callback = function()
-        Fluent:Notify({
-            Title = "Sistema",
-            Content = "Lista de jogadores atualizada!",
-            Duration = 3
-        })
-    end
+        if not jogadorSelecionado or jogadorSelecionado == "" then
+            Rayfield:Notify({
+                Title = "Erro",
+                Content = "Digite o nome de um jogador primeiro!",
+                Duration = 3,
+                Image = 4483362458
+            })
+            return
+        end
+        
+        local targetPlayer = nil
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            if player.Name:lower():find(jogadorSelecionado:lower(), 1, true) or 
+               (player.DisplayName and player.DisplayName:lower():find(jogadorSelecionado:lower(), 1, true)) then
+                targetPlayer = player
+                break
+            end
+        end
+        
+        if targetPlayer and targetPlayer.Character then
+            local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                workspace.CurrentCamera.CameraSubject = humanoid
+                Rayfield:Notify({
+                    Title = "View Player",
+                    Content = "Espectando: " .. targetPlayer.Name,
+                    Duration = 3,
+                    Image = 4483362458
+                })
+            else
+                Rayfield:Notify({
+                    Title = "Erro",
+                    Content = "Humanoid do jogador não encontrado!",
+                    Duration = 3,
+                    Image = 4483362458
+                })
+            end
+        else
+            Rayfield:Notify({
+                Title = "Erro",
+                Content = "Jogador não encontrado!",
+                Duration = 3,
+                Image = 4483362458
+            })
+        end
+    end,
 })
 
-Tabs.Troll:AddParagraph({
-    Title = "Ferramentas de Troll",
-    Content = "Selecione um jogador e escolha uma ação"
-})
-
-local Dropdown = Tabs.Troll:AddDropdown("Dropdown", {
-    Title = "Lista de Jogadores",
-    Description = "Selecione um jogador para as ações",
-    Values = ObterNomesJogadores(),
-    Default = 1,
-    Callback = function(Value)
-        jogadorSelecionado = Value
-        Fluent:Notify({
-            Title = "Jogador Selecionado",
-            Content = "Você selecionou: " .. Value,
-            Duration = 3
-        })
-    end
-})
-
-Tabs.Troll:AddButton({
-    Title = "🔄 Atualizar Lista",
-    Description = "Atualiza a lista de jogadores",
+-- TP to Player
+TrollTab:CreateButton({
+    Name = "📍 TP to Player",
     Callback = function()
-        Dropdown:SetValues(ObterNomesJogadores())
-        Fluent:Notify({
-            Title = "Lista Atualizada",
-            Content = "Jogadores atualizados com sucesso!",
-            Duration = 2
-        })
-    end
-})
-
--- REMOVI A LINHA AddDivider() QUE ESTAVA CAUSANDO O ERRO
-
-Tabs.Troll:AddButton({
-    Title = "📍 TP até Jogador",
-    Description = "Teleporta até o jogador selecionado",
-    Callback = function()
-        local alvo = game.Players:FindFirstChild(jogadorSelecionado)
+        if not jogadorSelecionado or jogadorSelecionado == "" then
+            Rayfield:Notify({
+                Title = "Erro",
+                Content = "Digite o nome de um jogador primeiro!",
+                Duration = 3,
+                Image = 4483362458
+            })
+            return
+        end
+        
+        local targetPlayer = nil
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            if player.Name:lower():find(jogadorSelecionado:lower(), 1, true) or 
+               (player.DisplayName and player.DisplayName:lower():find(jogadorSelecionado:lower(), 1, true)) then
+                targetPlayer = player
+                break
+            end
+        end
+        
         local meuChar = game.Players.LocalPlayer.Character
-        if alvo and meuChar and alvo.Character and alvo.Character:FindFirstChild("HumanoidRootPart") then
-            meuChar:MoveTo(alvo.Character.HumanoidRootPart.Position + Vector3.new(2, 0, 2))
-            Fluent:Notify({
+        if targetPlayer and meuChar and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and meuChar:FindFirstChild("HumanoidRootPart") then
+            meuChar.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(2, 0, 2)
+            Rayfield:Notify({
                 Title = "TP Realizado",
-                Content = "Teleportado até " .. jogadorSelecionado,
-                Duration = 3
+                Content = "Teleportado até " .. targetPlayer.Name,
+                Duration = 3,
+                Image = 4483362458
             })
         else
-            Fluent:Notify({
+            Rayfield:Notify({
                 Title = "Erro",
-                Content = "Não foi possível realizar o TP",
-                Duration = 3
+                Content = "Não foi possível teleportar",
+                Duration = 3,
+                Image = 4483362458
             })
         end
-    end
+    end,
 })
 
-Tabs.Troll:AddButton({
-    Title = "🛋️ Pegar Sofá",
-    Description = "Teleporta para a sala da festa",
+-- Kill Player
+TrollTab:CreateButton({
+    Name = "💀 Kill Player",
     Callback = function()
-        local personagem = game.Players.LocalPlayer.Character
-        if personagem and personagem:FindFirstChild("HumanoidRootPart") then
-            personagem:MoveTo(Vector3.new(-164, 18, -38))
-            Fluent:Notify({
-                Title = "Localização",
-                Content = "Teleportado para a sala da festa",
-                Duration = 3
-            })
-        end
-    end
-})
-
-Tabs.Troll:AddButton({
-    Title = "💀 Kill Player",
-    Description = "Elimina o jogador selecionado",
-    Callback = function()
-        if not jogadorSelecionado then
-            Fluent:Notify({
+        if not jogadorSelecionado or jogadorSelecionado == "" then
+            Rayfield:Notify({
                 Title = "Erro",
-                Content = "Nenhum jogador selecionado!",
-                Duration = 3
+                Content = "Digite o nome de um jogador primeiro!",
+                Duration = 3,
+                Image = 4483362458
             })
             return
         end
 
-        local targetPlayer = game.Players:FindFirstChild(jogadorSelecionado)
+        local targetPlayer = nil
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            if player.Name:lower():find(jogadorSelecionado:lower(), 1, true) or 
+               (player.DisplayName and player.DisplayName:lower():find(jogadorSelecionado:lower(), 1, true)) then
+                targetPlayer = player
+                break
+            end
+        end
+
         if not targetPlayer or not targetPlayer.Character then
-            Fluent:Notify({
+            Rayfield:Notify({
                 Title = "Erro",
                 Content = "Jogador não encontrado!",
-                Duration = 3
+                Duration = 3,
+                Image = 4483362458
             })
             return
         end
@@ -154,219 +231,352 @@ Tabs.Troll:AddButton({
         local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
         if humanoid then
             humanoid.Health = 0
-            Fluent:Notify({
+            Rayfield:Notify({
                 Title = "Sucesso",
-                Content = jogadorSelecionado .. " foi eliminado!",
-                Duration = 3
+                Content = targetPlayer.Name .. " foi eliminado!",
+                Duration = 3,
+                Image = 4483362458
             })
         else
-            Fluent:Notify({
+            Rayfield:Notify({
                 Title = "Erro",
                 Content = "Humanoid não encontrado!",
-                Duration = 3
+                Duration = 3,
+                Image = 4483362458
             })
         end
-    end
+    end,
 })
 
-Tabs.Troll:AddButton({
-    Title = "👁️ View Player",
-    Description = "Especta/para de espectar o jogador",
+-- Pegar Sofá
+TrollTab:CreateButton({
+    Name = "🛋️ Pegar Sofá",
     Callback = function()
-        local player = game.Players.LocalPlayer
-        local camera = workspace.CurrentCamera
-        local targetPlayer = game.Players:FindFirstChild(jogadorSelecionado)
+        local personagem = game.Players.LocalPlayer.Character
+        if personagem and personagem:FindFirstChild("HumanoidRootPart") then
+            personagem.HumanoidRootPart.CFrame = CFrame.new(-82, 19, -130)
+            Rayfield:Notify({
+                Title = "Localização",
+                Content = "Teleportado para o sofá!",
+                Duration = 3,
+                Image = 4483362458
+            })
+        end
+    end,
+})
 
-        if not jogadorSelecionado then
-            Fluent:Notify({
+-- AUTO FLING MELHORADO (VOID + DELETAR SOFÁ + VOLTAR)
+TrollTab:CreateToggle({
+    Name = "💥 FLING VOID (MELHORADO)",
+    CurrentValue = false,
+    Flag = "AutoFlingToggle",
+    Callback = function(ativo)
+        if ativo and (not jogadorSelecionado or jogadorSelecionado == "") then
+            Rayfield:Notify({
                 Title = "Erro",
-                Content = "Nenhum jogador selecionado!",
-                Duration = 2
+                Content = "Digite o nome de um jogador primeiro!",
+                Duration = 3,
+                Image = 4483362458
             })
             return
+        end
+        
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then 
+            Rayfield:Notify({
+                Title = "Erro",
+                Content = "Personagem não encontrado!",
+                Duration = 3,
+                Image = 4483362458
+            })
+            return
+        end
+
+        local targetPlayer = nil
+        for _, plr in ipairs(game.Players:GetPlayers()) do
+            if plr.Name:lower():find(jogadorSelecionado:lower(), 1, true) or 
+               (plr.DisplayName and plr.DisplayName:lower():find(jogadorSelecionado:lower(), 1, true)) then
+                targetPlayer = plr
+                break
+            end
         end
 
         if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            Fluent:Notify({
+            Rayfield:Notify({
                 Title = "Erro",
-                Content = "Jogador inválido!",
-                Duration = 2
+                Content = "Jogador alvo inválido!",
+                Duration = 3,
+                Image = 4483362458
             })
             return
         end
 
-        if not isViewingPlayer then
-            isViewingPlayer = true
-            camera.CameraType = Enum.CameraType.Custom
-            camera.CameraSubject = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
-
-            if currentViewConnection then currentViewConnection:Disconnect() end
-            currentViewConnection = targetPlayer.Character:FindFirstChildOfClass("Humanoid").Died:Connect(function()
-                isViewingPlayer = false
-                camera.CameraType = Enum.CameraType.Custom
-                camera.CameraSubject = player.Character and player.Character:FindFirstChildOfClass("Humanoid") or nil
-                Fluent:Notify({
-                    Title = "View Player",
-                    Content = "Jogador morreu!",
-                    Duration = 2
-                })
-            end)
-
-            Fluent:Notify({
-                Title = "View Player",
-                Content = "Espectando " .. jogadorSelecionado,
-                Duration = 2
-            })
-        else
-            isViewingPlayer = false
-            camera.CameraType = Enum.CameraType.Custom
-            camera.CameraSubject = player.Character and player.Character:FindFirstChildOfClass("Humanoid") or nil
-            
-            if currentViewConnection then
-                currentViewConnection:Disconnect()
-                currentViewConnection = nil
-            end
-            
-            Fluent:Notify({
-                Title = "View Player",
-                Content = "Parou de espectar",
-                Duration = 2
-            })
-        end
-    end
-})
-
-Tabs.Troll:AddToggle("AutoFlingToggle", {
-    Title = "💥 Auto Fling Player",
-    Description = "Ativa o modo caótico contra o jogador",
-    Default = false,
-    Callback = function(ativo)
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
         local hrp = char.HumanoidRootPart
+        local alvoHRP = targetPlayer.Character.HumanoidRootPart
 
-        if ativo and jogadorSelecionado then
-            local alvo = game.Players:FindFirstChild(jogadorSelecionado)
-            if not alvo or not alvo.Character or not alvo.Character:FindFirstChild("HumanoidRootPart") then
-                Fluent:Notify({
-                    Title = "Erro",
-                    Content = "Jogador alvo inválido!",
-                    Duration = 3
-                })
-                return
-            end
+        if ativo then
+            -- Salva posição original para voltar depois
+            local originalPosition = hrp.CFrame
+            local originalAlvoPosition = alvoHRP.CFrame
 
-            local alvoHRP = alvo.Character.HumanoidRootPart
-            hrp.CFrame = alvoHRP.CFrame * CFrame.new(2, 0, 2)
+            Rayfield:Notify({
+                Title = "FLING VOID",
+                Content = "Iniciando contra " .. targetPlayer.Name,
+                Duration = 2,
+                Image = 4483362458
+            })
+
+            -- FASE 1: FLING NORMAL
+            hrp.CFrame = alvoHRP.CFrame * CFrame.new(0, 3, 0) -- Fica em cima do jogador
 
             local spin = Instance.new("BodyAngularVelocity")
-            spin.AngularVelocity = Vector3.new(math.rad(1200), math.rad(1500), math.rad(1200))
-            spin.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-            spin.P = 1e5
+            spin.AngularVelocity = Vector3.new(math.rad(2000), math.rad(2500), math.rad(2000))
+            spin.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+            spin.P = 1e9
             spin.Name = "YAK_SPIN"
             spin.Parent = hrp
 
             local force = Instance.new("BodyVelocity")
-            force.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-            force.P = 1e5
+            force.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+            force.P = 1e9
+            force.Velocity = Vector3.new(0, 100, 0) -- Joga pra cima
             force.Name = "YAK_FORCE"
             force.Parent = hrp
 
-            local runService = game:GetService("RunService")
-            autoFlingConexao = runService.Heartbeat:Connect(function()
-                if not ativo then
-                    autoFlingConexao:Disconnect()
-                    if spin then spin:Destroy() end
-                    if force then force:Destroy() end
-                    return
+            -- FASE 2: VOID (5 segundos depois)
+            task.delay(3, function()
+                if not ativo then return end
+                
+                Rayfield:Notify({
+                    Title = "FLING VOID",
+                    Content = "Mandando para o VOID!",
+                    Duration = 2,
+                    Image = 4483362458
+                })
+                
+                -- Teleporta para o VOID (Y: -5000)
+                hrp.CFrame = CFrame.new(0, -5000, 0)
+                if targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    targetPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, -5000, 0)
                 end
-
-                if not (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) then
-                    autoFlingConexao:Disconnect()
-                    if spin then spin:Destroy() end
-                    if force then force:Destroy() end
-                    return
-                end
-
-                local posAlvo = alvoHRP.Position
-                local posEu = hrp.Position
-                local offsetX = math.sin(tick() * 30) * 10
-                local offsetZ = math.cos(tick() * 25) * 10
-                local targetPos = posAlvo + Vector3.new(offsetX, 0, offsetZ)
-                local direcao = (targetPos - posEu).Unit
-                force.Velocity = direcao * 100
-
-                local dist = (posEu - posAlvo).Magnitude
-                if dist < 5 then
-                    alvoHRP.Velocity = Vector3.new(math.random(-100, 100), 250, math.random(-100, 100))
-                    hrp.Velocity = Vector3.new(0, 150, 0)
-
-                    task.delay(2, function()
-                        if autoFlingConexao then autoFlingConexao:Disconnect() end
-                        if spin then spin:Destroy() end
-                        if force then force:Destroy() end
-                        
-                        local originalPosition = hrp.CFrame
-                        local skyPosition = hrp.CFrame * CFrame.new(0, 1000, 500)
-                        hrp.CFrame = skyPosition
-
-                        local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-                        if humanoid then
-                            local tool = player.Character:FindFirstChildOfClass("Tool")
-                            if tool then
-                                tool.Parent = workspace
-                            end
-                        end
-
-                        task.delay(4, function()
-                            if hrp then
-                                hrp.CFrame = originalPosition
-                            end
-                        end)
-                    end)
+                
+                -- Deleta o sofá se existir
+                local sofa = workspace:FindFirstChild("Sofa") or workspace:FindFirstChild("Couch")
+                if sofa then
+                    sofa:Destroy()
+                    Rayfield:Notify({
+                        Title = "FLING VOID",
+                        Content = "Sofá deletado!",
+                        Duration = 2,
+                        Image = 4483362458
+                    })
                 end
             end)
 
-            Fluent:Notify({
-                Title = "Auto Fling",
-                Content = "Ativado contra " .. jogadorSelecionado,
-                Duration = 2
-            })
+            -- FASE 3: VOLTAR (10 segundos depois)
+            task.delay(8, function()
+                if not ativo then return end
+                
+                Rayfield:Notify({
+                    Title = "FLING VOID",
+                    Content = "Voltando para o início!",
+                    Duration = 2,
+                    Image = 4483362458
+                })
+                
+                -- Volta para posição original
+                hrp.CFrame = originalPosition
+                if targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    targetPlayer.Character.HumanoidRootPart.CFrame = originalAlvoPosition
+                end
+                
+                -- Remove os efeitos
+                if spin then spin:Destroy() end
+                if force then force:Destroy() end
+                if autoFlingConexao then autoFlingConexao:Disconnect() end
+            end)
+
         else
+            -- DESATIVAR
             if autoFlingConexao then autoFlingConexao:Disconnect() end
             if hrp and hrp:FindFirstChild("YAK_SPIN") then hrp.YAK_SPIN:Destroy() end
             if hrp and hrp:FindFirstChild("YAK_FORCE") then hrp.YAK_FORCE:Destroy() end
             
-            Fluent:Notify({
-                Title = "Auto Fling",
+            Rayfield:Notify({
+                Title = "FLING VOID",
                 Content = "Desativado",
-                Duration = 2
+                Duration = 2,
+                Image = 4483362458
             })
         end
-    end
+    end,
 })
 
-Tabs.Credits:AddParagraph({
-    Title = "📜 Créditos",
-    Content = "👑 Dono do Hub: ★ Pedro of war ★"
+-- ABA FERRAMENTAS
+local ToolsTab = Window:CreateTab("Ferramentas", 4483362458)
+ToolsTab:CreateSection("Utilidades")
+
+ToolsTab:CreateButton({
+    Name = "🔄 Rejoin",
+    Callback = function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+    end,
 })
 
-Tabs.Credits:AddParagraph({
-    Title = "✨ Características",
-    Content = "• Interface Fluent UI\n• Sistema de notificações\n• Múltiplas funções de troll\n• Design moderno e elegante"
+ToolsTab:CreateButton({
+    Name = "📋 Copiar Coordenadas",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local pos = player.Character.HumanoidRootPart.Position
+            setclipboard(string.format("X: %d, Y: %d, Z: %d", pos.X, pos.Y, pos.Z))
+            Rayfield:Notify({
+                Title = "Coordenadas",
+                Content = "Coordenadas copiadas!",
+                Duration = 3,
+                Image = 4483362458
+            })
+        end
+    end,
 })
 
-SaveManager:SetLibrary(Fluent)
-InterfaceManager:SetLibrary(Fluent)
-SaveManager:IgnoreThemeSettings()
-InterfaceManager:SetFolder("YAKHUB")
-SaveManager:SetFolder("YAKHUB")
+ToolsTab:CreateButton({
+    Name = "⏰ Anti AFK",
+    Callback = function()
+        local connection
+        connection = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+            game:GetService("VirtualInputManager"):SendKeyEvent(true, "Space", false, game)
+            wait(0.1)
+            game:GetService("VirtualInputManager"):SendKeyEvent(false, "Space", false, game)
+        end)
+        Rayfield:Notify({
+            Title = "Anti AFK",
+            Content = "Ativado!",
+            Duration = 3,
+            Image = 4483362458
+        })
+        _G.AntiAFKConnection = connection
+    end,
+})
 
-Window:SelectTab(1)
+-- ABA CORPO
+local BodyTab = Window:CreateTab("Corpo", 4483362458)
+BodyTab:CreateSection("Controles do Corpo")
 
-Fluent:Notify({
-    Title = "YAK HUB",
+local speed = 16
+local jumpPower = 50
+
+BodyTab:CreateInput({
+    Name = "Velocidade",
+    PlaceholderText = tostring(speed),
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        local newSpeed = tonumber(text)
+        if newSpeed then
+            speed = newSpeed
+            local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = speed
+            end
+            Rayfield:Notify({
+                Title = "Velocidade",
+                Content = "Velocidade alterada para: " .. speed,
+                Duration = 3,
+                Image = 4483362458
+            })
+        end
+    end,
+})
+
+BodyTab:CreateInput({
+    Name = "Pulo",
+    PlaceholderText = tostring(jumpPower),
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        local newJumpPower = tonumber(text)
+        if newJumpPower then
+            jumpPower = newJumpPower
+            local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.JumpPower = jumpPower
+            end
+            Rayfield:Notify({
+                Title = "Pulo",
+                Content = "Pulo alterado para: " .. jumpPower,
+                Duration = 3,
+                Image = 4483362458
+            })
+        end
+    end,
+})
+
+BodyTab:CreateButton({
+    Name = "🚫 Anti Sit",
+    Callback = function()
+        local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.Sit = false
+            humanoid.Changed:Connect(function(property)
+                if property == "Sit" then
+                    humanoid.Sit = false
+                end
+            end)
+            Rayfield:Notify({
+                Title = "Anti Sit",
+                Content = "Anti Sit ativado!",
+                Duration = 3,
+                Image = 4483362458
+            })
+        end
+    end,
+})
+
+-- ABA OUTROS
+local OtherTab = Window:CreateTab("Outros", 4483362458)
+OtherTab:CreateSection("Configurações Adicionais")
+
+OtherTab:CreateButton({
+    Name = "🎩 Set RP Name",
+    Callback = function()
+        local args = {
+            [1] = "RolePlayName",
+            [2] = "COOLKID 666"
+        }
+        game:GetService("ReplicatedStorage"):WaitForChild("RE"):WaitForChild("1RPNam1eTex1t"):FireServer(unpack(args))
+        Rayfield:Notify({
+            Title = "RP Name",
+            Content = "Nome definido: COOLKID 666",
+            Duration = 3,
+            Image = 4483362458
+        })
+    end,
+})
+
+OtherTab:CreateButton({
+    Name = "⚡ Equip All Items",
+    Callback = function()
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChildOfClass("Humanoid") then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                if tool:IsA("Tool") then
+                    humanoid:EquipTool(tool)
+                end
+            end
+            Rayfield:Notify({
+                Title = "Itens Equipados",
+                Content = "Todos os itens equipados!",
+                Duration = 3,
+                Image = 4483362458
+            })
+        end
+    end,
+})
+
+Rayfield:Notify({
+    Title = "🐂 YAK HUB",
     Content = "Script carregado com sucesso!",
-    Duration = 5
+    Duration = 5,
+    Image = 4483362458
 })
