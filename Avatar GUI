@@ -1,0 +1,151 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+-- GUI Base
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AvatarEditorGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0,250,0,300)
+MainFrame.Position = UDim2.new(0.05,0,0.05,0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = true
+MainFrame.Parent = ScreenGui
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,0,0,25)
+Title.Position = UDim2.new(0,0,0,0)
+Title.BackgroundTransparency = 1
+Title.Text = "Avatar Editor"
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 14
+Title.Parent = MainFrame
+
+-- Quadrado minimizador
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Size = UDim2.new(0,50,0,25)
+MinimizeButton.Position = UDim2.new(0,0,0,-30)
+MinimizeButton.Text = "GUI"
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(50,50,50)
+MinimizeButton.TextColor3 = Color3.fromRGB(255,255,255)
+MinimizeButton.Font = Enum.Font.SourceSans
+MinimizeButton.TextSize = 14
+MinimizeButton.Parent = ScreenGui
+
+MinimizeButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- Função para criar botões
+local function CreateButton(name, y, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0,220,0,25)
+    btn.Position = UDim2.new(0,10,0,y)
+    btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.Font = Enum.Font.SourceSans
+    btn.TextSize = 14
+    btn.Text = name
+    btn.Parent = MainFrame
+    btn.MouseButton1Click:Connect(callback)
+end
+
+-- Função para criar sliders
+local function CreateSlider(name, y, min, max, default, callback)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0,220,0,20)
+    label.Position = UDim2.new(0,10,0,y)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(255,255,255)
+    label.Font = Enum.Font.SourceSans
+    label.TextSize = 14
+    label.Text = name..": "..tostring(default)
+    label.Parent = MainFrame
+
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Size = UDim2.new(0,220,0,20)
+    sliderFrame.Position = UDim2.new(0,10,0,y+20)
+    sliderFrame.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    sliderFrame.Parent = MainFrame
+
+    local sliderButton = Instance.new("TextButton")
+    sliderButton.Size = UDim2.new((default-min)/(max-min),0,1,0)
+    sliderButton.Position = UDim2.new(0,0,0,0)
+    sliderButton.BackgroundColor3 = Color3.fromRGB(0,255,0)
+    sliderButton.Text = ""
+    sliderButton.Parent = sliderFrame
+
+    local dragging = false
+    sliderButton.MouseButton1Down:Connect(function()
+        dragging = true
+    end)
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    RunService.RenderStepped:Connect(function()
+        if dragging then
+            local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+            local relativeX = math.clamp(mouse.X - sliderFrame.AbsolutePosition.X,0,sliderFrame.AbsoluteSize.X)
+            sliderButton.Size = UDim2.new(relativeX/sliderFrame.AbsoluteSize.X,0,1,0)
+            local value = min + (relativeX/sliderFrame.AbsoluteSize.X)*(max-min)
+            label.Text = name..": "..string.format("%.1f",value)
+            callback(value)
+        end
+    end)
+end
+
+-- Funções de avatar
+local function SetPartSize(partName, size)
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild(partName) then
+        char[partName].Size = Vector3.new(size,size,size)
+    end
+end
+
+local function SetBodyColor(color)
+    local char = LocalPlayer.Character
+    if char then
+        for _, part in pairs(char:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Color = color
+            end
+        end
+    end
+end
+
+-- Sliders de tamanho
+CreateSlider("Cabeça", 40, 1, 5, 1, function(value)
+    SetPartSize("Head", value)
+end)
+
+CreateSlider("Braços", 90, 1, 4, 1, function(value)
+    SetPartSize("LeftArm", value)
+    SetPartSize("RightArm", value)
+end)
+
+CreateSlider("Pernas", 140, 1, 4, 1, function(value)
+    SetPartSize("LeftLeg", value)
+    SetPartSize("RightLeg", value)
+end)
+
+-- Botões de cor
+CreateButton("Cor Vermelha", 190, function()
+    SetBodyColor(Color3.fromRGB(255,0,0))
+end)
+CreateButton("Cor Azul", 220, function()
+    SetBodyColor(Color3.fromRGB(0,0,255))
+end)
+CreateButton("Reset Avatar", 250, function()
+    local char = LocalPlayer.Character
+    if char then
+        char:BreakJoints()
+    end
+end)
